@@ -123,7 +123,7 @@ GameObject:
   - component: {fileID: 3571696957788170951}
   - component: {fileID: 105461753216454870}
   m_Layer: 0
-  m_Name: Player
+  m_Name: PlayerLAN
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
