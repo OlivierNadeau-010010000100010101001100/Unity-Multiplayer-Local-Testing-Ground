@@ -1,24 +1,51 @@
 using UnityEngine;
-using Unity.Netcode;
 
-public class SimplePlayerController : NetworkBehaviour
+[RequireComponent(typeof(Rigidbody))]
+public class SimpleMovement : MonoBehaviour
 {
     public float moveSpeed = 5f;
+    public float jumpForce = 5f;
+    public LayerMask groundLayer;
+    public Transform groundCheck;
+    public float groundCheckRadius = 0.2f;
+
+    [HideInInspector] public bool canMove = true;
+
+    private Rigidbody rb;
+    private bool isGrounded;
+
+    void Start()
+    {
+        rb = GetComponent<Rigidbody>();
+        rb.useGravity = true;
+        rb.isKinematic = false;
+    }
 
     void Update()
     {
-        if(!IsOwner) return;
+        if (!canMove) return;
 
-        float moveX = 0f;
-        float moveZ = 0f;
+        Move();
 
-        if (Input.GetKey(KeyCode.W)) moveZ += 1f;
-        if (Input.GetKey(KeyCode.S)) moveZ -= 1f;
-        if (Input.GetKey(KeyCode.A)) moveX -= 1f;
-        if (Input.GetKey(KeyCode.D)) moveX += 1f;
+        isGrounded = Physics.CheckSphere(groundCheck.position, groundCheckRadius, groundLayer);
 
-        Vector3 move = new Vector3(moveX, 0f, moveZ).normalized;
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+        {
+            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        }
+    }
 
-        transform.Translate(move * moveSpeed * Time.deltaTime, Space.World);
+    private void Move()
+    {
+        float h = Input.GetAxis("Horizontal");
+        float v = Input.GetAxis("Vertical");
+
+        Vector3 move = new Vector3(h, 0, v);
+        Vector3 moveWorld = transform.TransformDirection(move) * moveSpeed;
+
+        Vector3 velocity = rb.linearVelocity;
+        velocity.x = moveWorld.x;
+        velocity.z = moveWorld.z;
+        rb.linearVelocity = velocity;
     }
 }
