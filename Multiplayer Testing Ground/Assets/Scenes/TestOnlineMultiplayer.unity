@@ -801,11 +801,38 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8755868256653049992, guid: 61dae33536606e54983e6bf0d98a0788, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 7049767334262412994}
+    - target: {fileID: 8755868256653049992, guid: 61dae33536606e54983e6bf0d98a0788, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: OnLeaveButtonClicked
+      objectReference: {fileID: 0}
+    - target: {fileID: 8755868256653049992, guid: 61dae33536606e54983e6bf0d98a0788, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: GameUIManager, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 8755868256653049992, guid: 61dae33536606e54983e6bf0d98a0788, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 61dae33536606e54983e6bf0d98a0788, type: 3}
+--- !u!114 &7049767334262412994 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2010166985745694409, guid: 61dae33536606e54983e6bf0d98a0788, type: 3}
+  m_PrefabInstance: {fileID: 7049767334262412993}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b646cb9f4b5dd448a53e8f9e6a3dafe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

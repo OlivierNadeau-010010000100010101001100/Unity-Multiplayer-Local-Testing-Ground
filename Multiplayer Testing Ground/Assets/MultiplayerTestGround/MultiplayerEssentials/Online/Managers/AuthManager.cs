@@ -30,8 +30,7 @@ public class AuthManager : MonoBehaviour
         await signInLock.WaitAsync();
         try
         {
-            // ✅ Appeler UnityServices.InitializeAsync() ici AVANT AuthenticationService.Instance
-            if (!UnityServices.State.Equals(ServicesInitializationState.Initialized))
+            if (UnityServices.State != ServicesInitializationState.Initialized)
             {
                 await UnityServices.InitializeAsync();
             }
@@ -39,11 +38,6 @@ public class AuthManager : MonoBehaviour
             if (!AuthenticationService.Instance.IsSignedIn)
             {
                 await AuthenticationService.Instance.SignInAnonymouslyAsync();
-                Debug.Log("✅ Sign-in réussi : " + AuthenticationService.Instance.PlayerId);
-            }
-            else
-            {
-                Debug.Log("⚠️ Déjà signé : " + AuthenticationService.Instance.PlayerId);
             }
 
             isSignedIn = true;

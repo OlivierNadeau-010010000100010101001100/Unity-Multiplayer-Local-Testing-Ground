@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using Unity.Services.Relay;
@@ -16,7 +16,7 @@ public class MultiplayerManager : MonoBehaviour
 
     [Header("Multiplayer Settings")]
     public int maxPlayers = 4;
-    public string multiplayerSceneName = "TestOnlineMultiplayer"; // Doit �tre EXACT dans Build Settings
+    public string multiplayerSceneName = "TestOnlineMultiplayer"; // Nom EXACT dans Build Settings
 
     private async void Awake()
     {
@@ -31,9 +31,27 @@ public class MultiplayerManager : MonoBehaviour
             return;
         }
 
+        // 🔄 Attente jusqu'à ce que AuthManager.Instance soit prêt (max 5 secondes)
+        float timeout = 5f;
+        float elapsed = 0f;
+
+        while (AuthManager.Instance == null && elapsed < timeout)
+        {
+            await Task.Delay(100); // 100 ms
+            elapsed += 0.1f;
+        }
+
+        if (AuthManager.Instance == null)
+        {
+            Debug.LogError("❌ Timeout : AuthManager.Instance est toujours null après 5 secondes.");
+            return;
+        }
+
+        // ✅ AuthManager existe, maintenant on attend l’authentification
         await AuthManager.Instance.WaitForSignInAsync();
-        Debug.Log("Authentification termin�e. Pr�t pour multijoueur.");
+        Debug.Log("✅ Authentification terminée. Prêt pour multijoueur.");
     }
+
 
     public async Task HostGame()
     {
@@ -41,14 +59,13 @@ public class MultiplayerManager : MonoBehaviour
         {
             var allocation = await RelayService.Instance.CreateAllocationAsync(maxPlayers - 1);
             string joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
-            Debug.Log("Join Code : " + joinCode);
 
             var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
             transport.SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, "dtls"));
 
             if (!NetworkManager.Singleton.StartHost())
             {
-                Debug.LogError("Erreur : StartHost a �chou�.");
+                Debug.LogError("StartHost a échoué.");
                 return;
             }
 
@@ -77,7 +94,7 @@ public class MultiplayerManager : MonoBehaviour
 
             if (lobbies.Results.Count == 0)
             {
-                Debug.LogWarning("Aucun lobby trouv�.");
+                Debug.LogWarning("Aucun lobby trouvé.");
                 return;
             }
 
