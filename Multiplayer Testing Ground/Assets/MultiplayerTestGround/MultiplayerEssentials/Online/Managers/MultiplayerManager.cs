@@ -16,73 +16,99 @@ public class MultiplayerManager : MonoBehaviour
 
     [Header("Multiplayer Settings")]
     public int maxPlayers = 4;
-    public string multiplayerSceneName = "TestOnlineMultiplayer"; // Nom EXACT dans Build Settings
+    public string multiplayerSceneName = "TestOnlineMultiplayer";
 
-    private async void Awake()
+    private string currentJoinCode;
+
+    // Event déclenché quand le join code est prêt
+    public delegate void JoinCodeReadyHandler(string joinCode);
+    public event JoinCodeReadyHandler OnJoinCodeReady;
+
+    private void Awake()
     {
-        if (Instance == null)
+        // Singleton pattern
+        if (Instance != null && Instance != this)
         {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
+            Debug.LogWarning("Un autre MultiplayerManager existe déjà, destruction de celui-ci.");
             Destroy(gameObject);
             return;
         }
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
 
-        // 🔄 Attente jusqu'à ce que AuthManager.Instance soit prêt (max 5 secondes)
-        float timeout = 5f;
-        float elapsed = 0f;
+        _ = InitializeAsync();
+    }
 
+    private async Task InitializeAsync()
+    {
+        float timeout = 5f, elapsed = 0f;
         while (AuthManager.Instance == null && elapsed < timeout)
         {
-            await Task.Delay(100); // 100 ms
+            await Task.Delay(100);
             elapsed += 0.1f;
         }
-
         if (AuthManager.Instance == null)
         {
-            Debug.LogError("❌ Timeout : AuthManager.Instance est toujours null après 5 secondes.");
+            Debug.LogError("AuthManager toujours null après 5 secondes.");
             return;
         }
 
-        // ✅ AuthManager existe, maintenant on attend l’authentification
         await AuthManager.Instance.WaitForSignInAsync();
-        Debug.Log("✅ Authentification terminée. Prêt pour multijoueur.");
+        Debug.Log("Authentification réussie.");
     }
 
+    public string GetJoinCode()
+    {
+        Debug.Log($"GetJoinCode() appelé. Instance ID: {Instance.GetInstanceID()}, JoinCode: {currentJoinCode}");
+        return currentJoinCode;
+    }
 
-    public async Task HostGame()
+    /// <summary>
+    /// Héberge la partie, crée un lobby et retourne le join code.
+    /// </summary>
+    public async Task<string> HostGame()
     {
         try
         {
+            Debug.Log("Démarrage du host...");
+
             var allocation = await RelayService.Instance.CreateAllocationAsync(maxPlayers - 1);
-            string joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
+            currentJoinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
+
+            Debug.Log("Join code généré : " + currentJoinCode);
+
+            // Notifier que le code est prêt
+            OnJoinCodeReady?.Invoke(currentJoinCode);
 
             var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
             transport.SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, "dtls"));
 
             if (!NetworkManager.Singleton.StartHost())
             {
-                Debug.LogError("StartHost a échoué.");
-                return;
+                Debug.LogError("Échec du démarrage du host");
+                return null;
             }
 
-            await LobbyService.Instance.CreateLobbyAsync("Lobby_" + Random.Range(1000, 9999), maxPlayers, new CreateLobbyOptions
-            {
-                IsPrivate = false,
-                Data = new Dictionary<string, DataObject>
+            await LobbyService.Instance.CreateLobbyAsync(
+                "Lobby_" + Random.Range(1000, 9999),
+                maxPlayers,
+                new CreateLobbyOptions
                 {
-                    { "joinCode", new DataObject(DataObject.VisibilityOptions.Member, joinCode) }
-                }
-            });
+                    IsPrivate = false,
+                    Data = new Dictionary<string, DataObject>
+                    {
+                        { "joinCode", new DataObject(DataObject.VisibilityOptions.Member, currentJoinCode) }
+                    }
+                });
 
             NetworkManager.Singleton.SceneManager.LoadScene(multiplayerSceneName, LoadSceneMode.Single);
+
+            return currentJoinCode;
         }
         catch (System.Exception ex)
         {
-            Debug.LogError("Erreur HostGame : " + ex);
+            Debug.LogError("Erreur dans HostGame : " + ex.Message);
+            return null;
         }
     }
 
@@ -98,8 +124,10 @@ public class MultiplayerManager : MonoBehaviour
                 return;
             }
 
-            var lobby = lobbies.Results.Last();
-            string joinCode = lobby.Data["joinCode"].Value;
+            var lastLobby = lobbies.Results.Last();
+            var joinCode = lastLobby.Data["joinCode"].Value;
+
+            Debug.Log("Join code récupéré : " + joinCode);
 
             var allocation = await RelayService.Instance.JoinAllocationAsync(joinCode);
 
@@ -110,7 +138,7 @@ public class MultiplayerManager : MonoBehaviour
         }
         catch (System.Exception ex)
         {
-            Debug.LogError("Erreur JoinLastLobbyGame : " + ex);
+            Debug.LogError("Erreur dans JoinLastLobbyGame : " + ex.Message);
         }
     }
 }
